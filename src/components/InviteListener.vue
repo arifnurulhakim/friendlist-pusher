@@ -30,10 +30,14 @@
       <h2>Friend Requests</h2>
       <ul>
         <li v-for="fr in friendRequest" :key="fr.id">
-          {{ fr.player_id }} 
-          <button @click="acceptInvite(fr.id)">Accept</button>
-          <button @click="declineInvite(fr.id)">Decline</button>
-        </li>
+  {{ fr.friend_name }} (ID: {{ fr.friend_id }})
+  <button @click="() => { console.log('Klik Accept:', fr.friend_id); acceptInvite(fr.id); }">
+    Accept
+  </button>
+  <button @click="() => { console.log('Klik Decline:', fr.friend_id); declineInvite(fr.id); }">
+    Decline
+  </button>
+</li>
       </ul>
     </div>
 
@@ -84,7 +88,7 @@ export default {
     // Fetch friend invites from API
     const fetchFriendInvites = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/friendlist-invites', {
+        const response = await fetch('http://127.0.0.1:8000/api/friendlist-invite', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -99,24 +103,31 @@ export default {
 
     // Accept a friend request
     const acceptInvite = async (inviteId) => {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/friendlist-accept/${inviteId}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.ok) {
-          // Refresh the invites list
-          await fetchFriendInvites();
-          // Refresh the friend list
-          await fetchFriendList();
-        }
-      } catch (error) {
-        console.error("Failed to accept invite:", error);
+  try {
+    console.log("Accepting invite:", inviteId);
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/friendlist-accept/${inviteId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json' // Tambahkan content type
       }
-    };
+    });
 
+    const result = await response.json();
+    console.log("API Response:", result); // Lihat respons dari API
+
+    if (response.ok) {
+      console.log("Invite accepted successfully!");
+      await fetchFriendInvites();
+      await fetchFriendList();
+    } else {
+      console.error("Failed to accept invite:", result.message || "Unknown error");
+    }
+  } catch (error) {
+    console.error("Error accepting invite:", error);
+  }
+};
     // Decline a friend request
     const declineInvite = async (inviteId) => {
       try {
