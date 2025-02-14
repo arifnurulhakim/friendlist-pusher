@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount, getCurrentInstance, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, getCurrentInstance, computed, watch } from 'vue';
 import PopupNotification from './PopupNotification.vue';
 
 export default {
@@ -77,7 +77,7 @@ export default {
           }
         });
         const data = await response.json();
-        console.log(data.data);
+       
         
         friends.value = data.data || [];
       } catch (error) {
@@ -94,7 +94,7 @@ export default {
           }
         });
         const data = await response.json();
-        console.log("API Response:", data); // Debugging: Log the API response
+         // Debugging: Log the API response
         friendRequest.value = data.data || []; // Ensure this matches the API response structure
       } catch (error) {
         console.error("Failed to fetch friend invites:", error);
@@ -131,7 +131,7 @@ export default {
     // Decline a friend request
     const declineInvite = async (inviteId) => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/decline-invite/${inviteId}`, {
+        const response = await fetch(`http://127.0.0.1:8000/api/friendlist-ignore/${inviteId}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -161,31 +161,43 @@ export default {
   // Start Pusher/Echo subscription immediately
   const { appContext } = getCurrentInstance();
   const echo = appContext.config.globalProperties.$echo;
-  console.log(echo);
+ 
 
   if (echo) {
     channel = echo.private(`user.${userId}`);
     channel.listen('Invite', (event) => {
-      console.log('Updated Invites:', event.invites);
-      invites.value = event.invites;
+    
+      // Check if there are new invites
+  const newInvites = event.invites.filter(
+    invite => !invites.value.some(existing => existing.id === invite.id)
+  );
 
-      // Show slide-in notification for new friend request
-      if (popupNotification.value) {
-        popupNotification.value.show('You have a new friend request!');
-      }
+  if (newInvites.length > 0) {
+    invites.value = event.invites; // Update the invites list
+    if (popupNotification.value) {
+      popupNotification.value.show('You have a new friend request!');
+      fetchFriendInvites();
+    }
+  }
     });
   } else {
     console.error("Echo instance is not available!");
   }
 
-  // Fetch initial data in parallel
-  try {
-    await Promise.all([fetchFriendList(), fetchFriendInvites()]);
-  } catch (error) {
-    console.error("Error fetching initial data:", error);
-  }
+  if (activeTab.value === 'friends') {
+        await fetchFriendList();
+      } else {
+        await fetchFriendInvites();
+      }
 });
 
+watch(activeTab, async (newTab) => {
+      if (newTab === 'friends') {
+        await fetchFriendList();
+      } else {
+        await fetchFriendInvites();
+      }
+    });
     return {
       activeTab,
       friends,
