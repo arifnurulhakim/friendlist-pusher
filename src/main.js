@@ -10,13 +10,14 @@ import axios from 'axios';
 
 // Set up Vue app
 const app = createApp(App);
+const baseUrl = import.meta.env.VITE_BASE_URL || '';
 
 // Define login function
 const login = async () => {
   try {
     // Make API request to login
-    const response = await axios.post('http://127.0.0.1:8000/api/playersLogin', {
-      email_or_username: 'behkm',  // Example username or email
+    const response = await axios.post(`${baseUrl}/api/playersLogin`, {
+      email_or_username: 'behkm2',  // Example username or email
       password: 'password'           // Example password
     });
     console.log(response.data.data.token);
@@ -42,11 +43,11 @@ const initializeEcho = async () => {
 
     window.Echo = new Echo({
       broadcaster: 'pusher',
-      key: 'ecfd0fba473e11d60d3a',
+      key: 'a7b6de51c5d845967222',
       cluster: 'ap1',
       forceTLS: false,  // Make sure this is false for local development
       disableStats: true,
-      authEndpoint: 'http://127.0.0.1:8000/api/broadcasting/auth',
+      authEndpoint: `${baseUrl}/api/broadcasting/auth`,
       auth: {
         headers: {
           'Authorization': `Bearer ${token}`  // Use the token from login
